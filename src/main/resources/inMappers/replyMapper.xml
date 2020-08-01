@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.inventory.inMappers.replyMapper">
+    <insert id="insertReply">
+    <!-- 댓글을 추가 (댓글번호, 글번호, 댓글내용, 댓글작성자를 추가 댓글번호는 시퀀스로 추가 -->
+        insert into reply (rno,boardNo,replytext,replyer) values
+        ( reply_seq.nextval, #{boardNo}, #{replytext}, #{replyer} )
+    </insert>
+    
+    <select id="listReply" resultType="com.inventory.domain.ReplyVO">
+	<!-- 댓글의 작성자와 회원 아이디가 같고, 글번호가 같을 경우에 댓글 리스트를 검색 (내림차순으로)-->
+       	 select rno,
+        		boardNo,
+        		replyer,
+        		TO_CHAR(regdate,'YYYY/MM/DD')AS regdate ,
+        		TO_CHAR(updatedate,'YYYY/MM/DD')AS updatedate,
+        		replytext 
+           from reply r, tbl_in_member m
+          where r.replyer=m.userId and boardNo=#{boardNo}
+          order by rno    
+    </select>
+    <!--댓글수정-->
+   	<update id="replyModify">
+		update reply
+		   set replytext = #{replytext},
+		       updatedate = sysdate
+		 where rno = #{rno}
+	</update>
+	
+	<delete id="deleteReply">
+	 delete reply
+   	  where rno = #{rno}
+	</delete>
+	    <insert id="replyInsert">
+    <!-- 댓글을 추가 (댓글번호, 글번호, 댓글내용, 댓글작성자를 추가 댓글번호는 시퀀스로 추가 -->
+        insert into reply (rno,boardNo,replytext,replyer,reparent,redepth,reorder) values
+        ( reply_seq.nextval, #{boardNo}, #{replytext}, #{replyer},#{reparent},#{redepth},#{reorder} )
+    </insert>
+</mapper>

@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.inventory.inMappers.contentMapper">
+   
+	<!-- 글쓰기신규저장 -->
+	<insert id="newConten">
+		insert into 
+			tbl_in_board(
+						 boardNo,
+						 boardTitle,
+						 boardContens,
+						 userId,
+						 boardCategory
+						)
+		    	 values(
+						boardNo.NEXTVAL,
+		    	 		#{boardTitle},
+		    	 		#{boardContens},
+		    	 		#{userId},
+		    	 		#{boardCategory}
+		    	 		)
+	</insert>
+	
+	<select id="goodslist" resultType="com.inventory.domain.BoardVO">
+		select 
+			   boardNo,
+		       boardTitle,
+		       boardContens,
+		       TO_CHAR(boardregiDate, 'YYYY/MM/DD') AS boardregiDate,
+		       boardFileNo,
+		       userId,
+		       boardCategory,
+			   hit		       
+		  from tbl_in_board
+		  order by boardNo desc
+	</select>
+	
+	<select id="getBoardContent" resultType="com.inventory.domain.BoardVO">
+		select 
+			   boardNo,
+		       boardTitle,
+		       boardContens,
+		       TO_CHAR(boardregiDate, 'YYYY/MM/DD') AS boardregiDate,
+		       boardFileNo,
+		       userId,
+		       boardCategory,
+		       hit
+		  from tbl_in_board
+		  where boardNo = #{boardNo}
+	</select>
+	<!-- 글수정 -->
+	<update id="modifyBoardContent">
+		update tbl_in_board
+		   set boardTitle = #{boardTitle},
+		       boardContens = #{boardContens},
+		       boardCategory = #{boardCategory},
+		       boardregiDate = sysdate
+		 where boardNo = #{boardNo}
+	</update>
+	
+	<!-- 총 게시글 갯수 출력 -->
+	<select id="countBoard" resultType="int">
+		SELECT COUNT(*) FROM tbl_in_board
+	</select>
+	
+	<!-- 페이징 처리 후 게시글 조회 -->
+	<select id="selectBoard" resultType="com.inventory.domain.BoardVO">
+		    SELECT *
+			  FROM (
+					SELECT ROWNUM RN, A.* ,(select COUNT(*) from  reply where boardno in(a.boardNo)) cntRno
+						FROM (
+								select 
+									   boardNo,
+								       boardTitle,
+								       boardContens,
+								       TO_CHAR(boardregiDate, 'YYYY/MM/DD') AS boardregiDate,
+								       boardFileNo,
+								       userId,
+								       boardCategory,
+								       delYn,
+								       hit
+								 FROM tbl_in_board 
+								WHERE delYn = 'N'
+								ORDER BY boardNo DESC 
+								) A
+						)
+		   WHERE RN BETWEEN #{start} AND #{end}
+	</select>
+	<!-- 글삭제 -->	
+	<update id="delBoard">
+	 update tbl_in_board
+	    set delYn = 'Y'
+	  where boardNo = #{boardNo}
+	</update>
+	
+	<!-- 게시판 조회수 -->
+    <update id="boardHit" parameterType="int">
+    	UPDATE tbl_in_board SET
+    	hit = hit+1
+    	WHERE boardNo = #{boardNo}
+    </update>
+    
+    	<select id="searchList" resultType="com.inventory.domain.BoardVO">
+         SELECT * 
+			FROM (
+				SELECT ROWNUM RN, A.* ,(select COUNT(*) from reply where boardno in (a.boardNo)) cntRno
+					FROM (
+                          select 
+                               boardNo,
+                               boardTitle,
+                               boardContens,
+                               TO_CHAR(boardregiDate, 'YYYY/MM/DD') AS boardregiDate,
+                               boardFileNo,
+                               userId,
+                               boardCategory,
+                               hit
+							FROM tbl_in_board 
+							where boardTitle like '%'||#{boardTitle}||'%'
+                            union     
+                          select 
+								   boardNo,
+							       boardTitle,
+							       boardContens,
+							       TO_CHAR(boardregiDate, 'YYYY/MM/DD') AS boardregiDate,
+							       boardFileNo,
+							       userId,
+							       boardCategory,
+							       hit
+							FROM tbl_in_board 
+							where boardContens like '%'||#{boardTitle}||'%'
+							) A
+					)
+         WHERE RN BETWEEN #{start} AND #{end}
+         ORDER BY  boardNo DESC 
+	</select>
+	
+	<select id="coutSearchList" resultType="int">
+		SELECT COUNT(*) 
+			FROM (
+                          select 
+                               boardNo,
+                               boardTitle,
+                               boardContens,
+                               TO_CHAR(boardregiDate, 'YYYY/MM/DD') AS boardregiDate,
+                               boardFileNo,
+                               userId,
+                               boardCategory,
+                               hit
+							FROM tbl_in_board 
+							where boardTitle like '%'||#{boardTitle}||'%'
+                            union     
+                          select 
+								   boardNo,
+							       boardTitle,
+							       boardContens,
+							       TO_CHAR(boardregiDate, 'YYYY/MM/DD') AS boardregiDate,
+							       boardFileNo,
+							       userId,
+							       boardCategory,
+							       hit
+							FROM tbl_in_board 
+							where boardContens like '%'||#{boardTitle}||'%'
+							) A
+	</select>
+	
+	<!-- 총 게시글 갯수 출력 -->
+<!-- 	<select id="countVaKeList" resultType="int"> -->
+<!-- 	<if test='searchKey== "title"'> -->
+<!-- 		SELECT COUNT(*)   -->
+<!-- 		  FROM tbl_in_board  -->
+<!-- 		 where boardTitle like  '%'||#{searchValue}||'%' -->
+<!-- 	</if> -->
+<!-- 	<if test='searchKey== "content"'> -->
+<!-- 		SELECT COUNT(*)   -->
+<!-- 		  FROM tbl_in_board  -->
+<!-- 		 where boardContens like  '%'||#{searchValue}||'%' -->
+<!-- 	</if> -->
+<!-- 	<if test='searchKey== "titleContnt"'> -->
+<!-- 	    SELECT COUNT(*) -->
+<!--           FROM tbl_in_board -->
+<!--          WHERE boardTitle like '%'||#{searchValue}||'%' -->
+<!--             OR boardContens like '%'||#{searchValue}||'%' -->
+<!-- 	</if> -->
+<!-- 	<if test='searchKey== "id"'> -->
+<!-- 		SELECT COUNT(*)   -->
+<!-- 		  FROM tbl_in_board  -->
+<!-- 		 where userId =  #{searchValue} -->
+<!-- 	</if> -->
+<!-- 	<if test='searchKey== "no"'> -->
+<!-- 		SELECT COUNT(*)   -->
+<!-- 		  FROM tbl_in_board  -->
+<!-- 		 where boardNo =  #{searchValue} -->
+<!-- 	</if> -->
+<!-- 	</select> -->
+
+	<select id="countVaKeList" resultType="int">
+	    SELECT COUNT(*)  
+		  FROM tbl_in_board 
+		 WHERE 1=1
+	<if test='searchKey== "title"'>
+		 AND boardTitle like  '%'||#{searchValue}||'%'
+	</if>
+	<if test='searchKey== "content"'>
+		 AND boardContens like  '%'||#{searchValue}||'%'
+	</if>
+	<if test='searchKey== "titleContnt"'>
+         AND boardTitle like '%'||#{searchValue}||'%'
+          OR boardContens like '%'||#{searchValue}||'%'
+	</if>
+	<if test='searchKey== "id"'>
+		 AND userId =  #{searchValue}
+	</if>
+	<if test='searchKey== "no"'>
+		 AND boardNo =  #{searchValue}
+	</if>
+	</select>
+	
+	
+		
+	<select id="searchVaKeList" resultType="com.inventory.domain.BoardVO">
+       SELECT  RN, 
+            boardNo,         
+            boardTitle,      
+            boardContens,    
+            userId,      
+            boardFileNo,    	 
+            TO_CHAR(boardregiDate, 'YYYY/MM/DD') AS boardregiDate,
+            boardCategory, 
+            cntRno,  
+            hit   
+			FROM (
+				SELECT ROWNUM RN, A.* ,(select COUNT(*) from reply where boardno in (a.boardNo)) cntRno
+					FROM (
+					    <if test='searchKey== "title"'>
+                        	SELECT *  FROM tbl_in_board where boardTitle like  '%'||#{searchValue}||'%'
+                        </if>
+                        <if test='searchKey== "content"'>
+                        	SELECT *  FROM tbl_in_board where boardContens like  '%'||#{searchValue}||'%'
+                        </if>
+                        <if test='searchKey== "titleContnt"'>
+                        		            SELECT * 
+								              FROM tbl_in_board
+								             WHERE boardTitle like '%'||#{searchValue}||'%'
+								                OR boardContens like '%'||#{searchValue}||'%'
+                        </if>
+                        <if test='searchKey== "id"'>
+                        	SELECT * FROM tbl_in_board where userId =  #{searchValue}
+                        </if>
+                        <if test='searchKey== "no"'>
+                        	SELECT * FROM tbl_in_board where boardNo =  #{searchValue}
+                        </if>
+							) A
+					)
+         WHERE RN BETWEEN #{start} AND #{end}
+         ORDER BY  boardNo DESC 
+	</select>
+<!-- 		<select id="coutSearchList" resultType="int"> -->
+			
+<!-- 		</select> -->
+</mapper>
